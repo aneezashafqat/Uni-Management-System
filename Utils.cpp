@@ -8,9 +8,9 @@ using namespace std;
 
 void clearScreen() {
 #ifdef _WIN32
-    system("cls");
+    system("cls"); //for windows
 #else
-    system("clear");
+    system("clear"); //for linux.mac
 #endif
 }
 
@@ -20,7 +20,7 @@ void pauseScreen() {
     cin.get();
 }
 
-void printLine(char c, int len) {
+void printLine(char c, int len) {  //presents char
     for (int i = 0; i < len; i++) cout << c;
     cout << endl;
 }
@@ -34,7 +34,7 @@ void printHeader(const string& title) {
     printLine('=');
 }
 
-string trim(const string& s) {
+string trim(const string& s) { //string manipulation to avoid empty spaces
     int start = 0, end = (int)s.size() - 1;
     while (start <= end && (s[start] == ' ' || s[start] == '\t' || s[start] == '\r')) start++;
     while (end >= start && (s[end] == ' ' || s[end] == '\t' || s[end] == '\r')) end--;
@@ -46,7 +46,7 @@ void clearInput() {
     cin.ignore(10000, '\n');
 }
 
-int safeIntInput(const string& prompt, int minVal, int maxVal) {
+int safeIntInput(const string& prompt, int minVal, int maxVal) {  //validation
     int value;
     while (true) {
         cout << prompt;
@@ -69,7 +69,7 @@ int safeIntInput(const string& prompt, int minVal, int maxVal) {
     }
 }
 
-double safeDoubleInput(const string& prompt, double minVal, double maxVal) {
+double safeDoubleInput(const string& prompt, double minVal, double maxVal) {  // validation
     double value;
     while (true) {
         cout << prompt;
@@ -92,7 +92,7 @@ double safeDoubleInput(const string& prompt, double minVal, double maxVal) {
     }
 }
 
-bool isValidID(const string& id) {
+bool isValidID(const string& id) { //validation
     if (id.empty()) {
         cout << "ERROR: ID cannot be empty!\n";
         return false;
@@ -107,7 +107,7 @@ bool isValidID(const string& id) {
     return true;
 }
 
-bool isValidName(const string& name) {
+bool isValidName(const string& name) { //validation
     if (name.empty()) {
         cout << "ERROR: Name cannot be empty!\n";
         return false;
@@ -122,7 +122,7 @@ bool isValidName(const string& name) {
     return true;
 }
 
-bool isValidEmail(const string& email) {
+bool isValidEmail(const string& email) { // email format
     if (email.empty()) {
         cout << "ERROR: Email cannot be empty!\n";
         return false;
@@ -155,7 +155,7 @@ bool isValidEmail(const string& email) {
     return true;
 }
 
-bool isValidTimeSlot(const string& slot) {
+bool isValidTimeSlot(const string& slot) {  // format = mon 04:00-12:00
     if (slot.empty() || slot == "TBD") return true;
     if (slot.length() < 10) {
         cout << "ERROR: Invalid time slot format\n";
@@ -164,13 +164,15 @@ bool isValidTimeSlot(const string& slot) {
     return true;
 }
 
-bool confirmAction(const string& message) {
+bool confirmAction(const string& message) {  // y /n 
     cout << "\n" << message << "\nType 'yes' to confirm: ";
     string response;
     cin >> response;
     clearInput();
     return (response == "yes" || response == "YES");
 }
+
+//Grade convertors
 
 double percentToGPA(double pct) {
     if (pct >= 90) return 4.0;

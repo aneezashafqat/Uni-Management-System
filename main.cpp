@@ -1,15 +1,14 @@
-#include "AcademicSystem.h"
-#include <cstdlib>
+#include "AcademicSystem.h" //yet to write code for this class
+#include <cstdlib>  // for dictionaries 
 
 int main() {
-    // Create data directory if it doesn't exist
 #ifdef _WIN32
-    system("mkdir data 2>nul");
+    system("mkdir data 2>nul");  //windows
 #else
-    system("mkdir -p data");
+    system("mkdir -p data");  //linux n mac
 #endif
 
     AcademicSystem sys;
-    sys.run();
+    sys.run(); // for display n user input menu() 
     return 0;
 }

@@ -726,3 +726,296 @@ void AcademicSystem::viewTeacherFeedback() {
     }
     pauseScreen();
 }
+
+
+//course management 
+void AcademicSystem::menuCourses() {
+    int ch;
+    do {
+        printHeader("COURSE MANAGEMENT");
+        cout << "  1. Add Course\n"
+            << "  2. List All Courses\n"
+            << "  3. Delete Course\n"
+            << "  4. View Course Enrollments\n"
+            << "  0. Back\n";
+        printLine();
+        ch = safeIntInput("Choice: ", 0, 4);
+        switch (ch) {
+        case 1: addCourse(); break;
+        case 2: listCourses(); break;
+        case 3: deleteCourse(); break;
+        case 4: viewCourseEnrollments(); break;
+        }
+    } while (ch != 0);
+}
+
+void AcademicSystem::addCourse() {
+    if (courseCount >= MAX_COURSES) {
+        cout << "ERROR: Maximum courses reached (" << MAX_COURSES << ")!\n";
+        pauseScreen();
+        return;
+    }
+
+    printHeader("ADD NEW COURSE");
+
+    string id, title, tid, type;
+
+    // COURSE ID VALIDATION
+    while (true) {
+        cout << "Enter Course ID (numbers only): ";
+        cin >> id;
+        id = trim(id);
+
+        if (id.empty()) {
+            cout << "ERROR: Course ID cannot be empty!\n";
+            continue;
+        }
+
+        if (id[0] == '-') {
+            cout << "ERROR: Course ID cannot be negative!\n";
+            continue;
+        }
+
+        bool allDigits = true;
+        for (size_t i = 0; i < id.length(); i++) {
+            if (!isdigit(id[i])) {
+                allDigits = false;
+                break;
+            }
+        }
+
+        if (!allDigits) {
+            cout << "ERROR: Course ID must contain ONLY numbers (0-9)!\n";
+            continue;
+        }
+
+        if (idExistsCourse(id)) {
+            cout << "ERROR: Course ID '" << id << "' already exists!\n";
+            continue;
+        }
+
+        break;
+    }
+
+    cin.ignore();
+
+    // TITLE VALIDATION
+    while (true) {
+        cout << "Enter Course Title: ";
+        getline(cin, title);
+        title = trim(title);
+
+        if (title.empty()) {
+            cout << "ERROR: Title cannot be empty!\n";
+            continue;
+        }
+
+        bool validTitle = true;
+        for (size_t i = 0; i < title.length(); i++) {
+            char c = title[i];
+            if (!isalnum(c) && c != ' ' && c != '.' && c != '-' && c != '&') {
+                validTitle = false;
+                break;
+            }
+        }
+
+        if (!validTitle) {
+            cout << "ERROR: Title can only contain letters, numbers, spaces, dots, hyphens, and ampersands\n";
+            continue;
+        }
+
+        break;
+    }
+
+    // TEACHER ID VALIDATION
+    while (true) {
+        cout << "Enter Teacher ID: ";
+        getline(cin, tid);
+        tid = trim(tid);
+
+        if (tid.empty()) {
+            cout << "ERROR: Teacher ID cannot be empty!\n";
+            continue;
+        }
+
+        if (!findTeacher(tid)) {
+            cout << "ERROR: Teacher with ID '" << tid << "' not found!\n";
+            cout << "       Please add the teacher first.\n";
+            continue;
+        }
+
+        break;
+    }
+
+    // COURSE TYPE VALIDATION
+    while (true) {
+        cout << "Enter Type (Core/Elective/Lab): ";
+        cin >> type;
+        type = trim(type);
+
+        if (type == "Core" || type == "core" || type == "CORE") {
+            type = "Core";
+            break;
+        }
+        else if (type == "Elective" || type == "elective" || type == "ELECTIVE") {
+            type = "Elective";
+            break;
+        }
+        else if (type == "Lab" || type == "lab" || type == "LAB") {
+            type = "Lab";
+            break;
+        }
+        else {
+            cout << "ERROR: Invalid type! Please enter Core, Elective, or Lab\n";
+        }
+    }
+
+    // CREATE COURSE
+    Course* c = NULL;
+    if (type == "Core") {
+        c = new CoreCourse(id, title, tid);
+    }
+    else if (type == "Elective") {
+        c = new ElectiveCourse(id, title, tid);
+    }
+    else {
+        c = new LabCourse(id, title, tid);
+    }
+
+    double ew = WeightageConfig::getExamW(type);
+    double aw = WeightageConfig::getAssignW(type);
+    double qw = WeightageConfig::getQuizW(type);
+
+    if (ew > 0) c->addAssessment(new Exam(id + "_EX", "Final Exam", ew));
+    if (aw > 0) c->addAssessment(new Assignment(id + "_AS", "Assignment", aw));
+    if (qw > 0) c->addAssessment(new Quiz(id + "_QZ", "Quiz", qw));
+
+    courses[courseCount++] = c;
+    findTeacher(tid)->addCourse(id);
+
+    cout << "\n[SUCCESS] Course added successfully!\n";
+    cout << "========================================\n";
+    cout << "Course Details:\n";
+    cout << "  ID      : " << id << "\n";
+    cout << "  Title   : " << title << "\n";
+    cout << "  Teacher : " << tid << "\n";
+    cout << "  Type    : " << type << "\n";
+    cout << "========================================\n";
+
+    saveAll();
+    pauseScreen();
+}
+
+void AcademicSystem::listCourses() {
+    printHeader("ALL COURSES");
+    if (courseCount == 0) {
+        cout << "No courses found.\n";
+        pauseScreen();
+        return;
+    }
+    cout << left << setw(10) << "ID" << setw(30) << "Title"
+        << setw(12) << "Type" << setw(12) << "Teacher" << "Students\n";
+    printLine();
+    for (int i = 0; i < courseCount; i++) {
+        courses[i]->display();
+    }
+    pauseScreen();
+}
+
+void AcademicSystem::deleteCourse() {
+    printHeader("DELETE COURSE");
+    string id;
+    cout << "Enter Course ID: ";
+    cin >> id;
+
+    int index = -1;
+    for (int i = 0; i < courseCount; i++) {
+        if (courses[i] && courses[i]->getCourseID() == id) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1) {
+        cout << "ERROR: Course not found!\n";
+        pauseScreen();
+        return;
+    }
+
+    Course* c = courses[index];
+    cout << "\nCourse to delete:\n";
+    cout << "  ID: " << c->getCourseID() << "\n";
+    cout << "  Title: " << c->getTitle() << "\n";
+    cout << "  Enrolled Students: " << c->getEnrollmentCount() << "\n";
+
+    if (c->getEnrollmentCount() > 0) {
+        cout << "\nWARNING: This course has " << c->getEnrollmentCount()
+            << " enrolled students!\n";
+    }
+
+    cout << "\nAre you sure you want to delete this course? (y/n): ";
+    char confirm;
+    cin >> confirm;
+    if (tolower(confirm) != 'y') {
+        cout << "Deletion cancelled.\n";
+        pauseScreen();
+        return;
+    }
+
+    // Unenroll all students
+    for (int i = 0; i < c->getEnrollmentCount(); i++) {
+        Student* s = c->getStudentAt(i);
+        if (s) s->unenrollCourse(c->getCourseID());
+    }
+
+    // Remove associated sections
+    for (int i = 0; i < sectionCount; i++) {
+        if (sections[i].getCourseID() == id) {
+            for (int j = i; j < sectionCount - 1; j++) {
+                sections[j] = sections[j + 1];
+            }
+            sectionCount--;
+            i--;
+        }
+    }
+
+    delete courses[index];
+    for (int j = index; j < courseCount - 1; j++) {
+        courses[j] = courses[j + 1];
+    }
+    courseCount--;
+    courses[courseCount] = NULL;
+
+    cout << "\n[SUCCESS] Course deleted successfully!\n";
+    saveAll();
+    pauseScreen();
+}
+
+void AcademicSystem::viewCourseEnrollments() {
+    string id;
+    cout << "Enter Course ID: ";
+    cin >> id;
+    Course* c = findCourse(id);
+    if (!c) {
+        cout << "ERROR: Course not found.\n";
+        pauseScreen();
+        return;
+    }
+
+    printHeader("ENROLLMENTS - " + c->getTitle());
+    cout << "Type: " << c->getType()
+        << " | Teacher: " << c->getTeacherID()
+        << " | Enrolled: " << c->getEnrollmentCount() << "\n";
+    printLine();
+
+    if (c->getEnrollmentCount() == 0) {
+        cout << "No students enrolled.\n";
+    }
+    else {
+        for (int i = 0; i < c->getEnrollmentCount(); i++) {
+            Student* s = c->getStudentAt(i);
+            if (s) cout << "  " << s->getID() << "  " << s->getName() << "\n";
+        }
+    }
+    pauseScreen();
+} 

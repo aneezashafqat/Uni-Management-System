@@ -1099,3 +1099,208 @@ void AcademicSystem::listVenues() {
     }
     pauseScreen();
 }
+
+//section system 
+void AcademicSystem::menuSections() {
+    int ch;
+    do {
+        printHeader("SECTION MANAGEMENT");
+        cout << "  1. Create Section\n"
+            << "  2. List All Sections\n"
+            << "  0. Back\n";
+        printLine();
+        ch = safeIntInput("Choice: ", 0, 2);
+        switch (ch) {
+        case 1: createSection(); break;
+        case 2: listSections(); break;
+        }
+    } while (ch != 0);
+}
+
+void AcademicSystem::createSection() {
+    if (sectionCount >= MAX_SECTIONS) {
+        cout << "ERROR: Maximum sections reached (" << MAX_SECTIONS << ")!\n";
+        pauseScreen();
+        return;
+    }
+
+    printHeader("CREATE NEW SECTION");
+
+    string sid, cid, tid, vid, ts;
+
+    while (true) {
+        cout << "Enter Section ID (numbers only): ";
+        cin >> sid;
+        sid = trim(sid);
+
+        if (sid.empty()) {
+            cout << "ERROR: Section ID cannot be empty!\n";
+            continue;
+        }
+
+        if (sid[0] == '-') {
+            cout << "ERROR: Section ID cannot be negative!\n";
+            continue;
+        }
+
+        bool allDigits = true;
+        for (size_t i = 0; i < sid.length(); i++) {
+            if (!isdigit(sid[i])) {
+                allDigits = false;
+                break;
+            }
+        }
+
+        if (!allDigits) {
+            cout << "ERROR: Section ID must contain ONLY numbers (0-9)!\n";
+            continue;
+        }
+
+        bool duplicate = false;
+        for (int i = 0; i < sectionCount; i++) {
+            if (sections[i].getSectionID() == sid) {
+                duplicate = true;
+                break;
+            }
+        }
+        if (duplicate) {
+            cout << "ERROR: Section ID '" << sid << "' already exists!\n";
+            continue;
+        }
+
+        break;
+    }
+
+    while (true) {
+        cout << "Enter Course ID: ";
+        cin >> cid;
+        cid = trim(cid);
+
+        if (!findCourse(cid)) {
+            cout << "ERROR: Course not found! Please enter a valid Course ID.\n";
+            continue;
+        }
+        break;
+    }
+
+    while (true) {
+        cout << "Enter Teacher ID: ";
+        cin >> tid;
+        tid = trim(tid);
+
+        if (!findTeacher(tid)) {
+            cout << "ERROR: Teacher not found! Please enter a valid Teacher ID.\n";
+            continue;
+        }
+        break;
+    }
+
+    if (venueCount == 0) {
+        cout << "\n========================================\n";
+        cout << "ERROR: No venues available in the system!\n";
+        cout << "You must create a venue before creating a section.\n";
+        cout << "========================================\n\n";
+
+        cout << "Would you like to create a venue now? (y/n): ";
+        char createVenue;
+        cin >> createVenue;
+
+        if (tolower(createVenue) == 'y') {
+            addVenue();  
+            cout << "\nVenue created. Do you want to continue creating this section? (y/n): ";
+            char continueSection;
+            cin >> continueSection;
+            if (tolower(continueSection) != 'y') {
+                cout << "Section creation cancelled.\n";
+                pauseScreen();
+                return;
+            }
+        }
+        else {
+            cout << "Section creation cancelled. Please add a venue first from Venue Management menu.\n";
+            pauseScreen();
+            return;
+        }
+    }
+
+    while (true) {
+        cout << "\nAvailable Venues:\n";
+        cout << left << setw(12) << "Venue ID" << setw(12) << "Capacity" << "Computers\n";
+        printLine('-', 35);
+        for (int i = 0; i < venueCount; i++) {
+            venues[i].display();
+        }
+        printLine('-', 35);
+
+        cout << "\nEnter Venue ID from the list above: ";
+        cin >> vid;
+        vid = trim(vid);
+
+        bool venueFound = false;
+        for (int i = 0; i < venueCount; i++) {
+            if (venues[i].getRoomID() == vid) {
+                venueFound = true;
+                break;
+            }
+        }
+
+        if (!venueFound) {
+            cout << "ERROR: Venue ID '" << vid << "' not found!\n";
+            cout << "Please enter a Venue ID from the list above.\n";
+            continue;
+        }
+        break;
+    }
+
+    cin.ignore();
+
+    while (true) {
+        cout << "Enter Time Slot (e.g., Mon 09:00-12:00) or press Enter for TBD: ";
+        getline(cin, ts);
+        ts = trim(ts);
+
+        if (ts.empty()) {
+            ts = "TBD";
+            break;
+        }
+
+        if (ts.length() >= 10) {
+            break;
+        }
+        else {
+            cout << "ERROR: Invalid time slot format. Use format like 'Mon 09:00-12:00'\n";
+        }
+    }
+
+    sections[sectionCount++] = Section(sid, cid, tid, vid, ts);
+
+    cout << "\n[SUCCESS] Section created successfully!\n";
+    cout << "========================================\n";
+    cout << "Section Details:\n";
+    cout << "  Section ID : " << sid << "\n";
+    cout << "  Course ID  : " << cid << "\n";
+    cout << "  Teacher ID : " << tid << "\n";
+    cout << "  Venue ID   : " << vid << "\n";
+    cout << "  Time Slot  : " << ts << "\n";
+    cout << "========================================\n";
+
+    saveAll();
+    pauseScreen();
+}
+
+void AcademicSystem::listSections() {
+    printHeader("ALL SECTIONS");
+    if (sectionCount == 0) {
+        cout << "No sections found.\n";
+        pauseScreen();
+        return;
+    }
+    cout << left << setw(12) << "Section ID" << setw(10) << "Course"
+        << setw(12) << "Teacher" << setw(12) << "Venue"
+        << setw(18) << "Time Slot" << "Students\n";
+    printLine();
+    for (int i = 0; i < sectionCount; i++) {
+        sections[i].display();
+    }
+    pauseScreen();
+}

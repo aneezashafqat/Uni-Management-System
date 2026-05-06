@@ -760,7 +760,6 @@ void AcademicSystem::addCourse() {
 
     string id, title, tid, type;
 
-    // COURSE ID VALIDATION
     while (true) {
         cout << "Enter Course ID (numbers only): ";
         cin >> id;
@@ -799,7 +798,6 @@ void AcademicSystem::addCourse() {
 
     cin.ignore();
 
-    // TITLE VALIDATION
     while (true) {
         cout << "Enter Course Title: ";
         getline(cin, title);
@@ -827,7 +825,6 @@ void AcademicSystem::addCourse() {
         break;
     }
 
-    // TEACHER ID VALIDATION
     while (true) {
         cout << "Enter Teacher ID: ";
         getline(cin, tid);
@@ -847,7 +844,6 @@ void AcademicSystem::addCourse() {
         break;
     }
 
-    // COURSE TYPE VALIDATION
     while (true) {
         cout << "Enter Type (Core/Elective/Lab): ";
         cin >> type;
@@ -870,7 +866,6 @@ void AcademicSystem::addCourse() {
         }
     }
 
-    // CREATE COURSE
     Course* c = NULL;
     if (type == "Core") {
         c = new CoreCourse(id, title, tid);
@@ -962,7 +957,6 @@ void AcademicSystem::deleteCourse() {
         return;
     }
 
-    // Unenroll all students
     for (int i = 0; i < c->getEnrollmentCount(); i++) {
         Student* s = c->getStudentAt(i);
         if (s) s->unenrollCourse(c->getCourseID());
@@ -1019,3 +1013,89 @@ void AcademicSystem::viewCourseEnrollments() {
     }
     pauseScreen();
 } 
+
+void AcademicSystem::menuVenues() {
+    int ch;
+    do {
+        printHeader("VENUE MANAGEMENT");
+        cout << "  1. Add Venue\n"
+            << "  2. List All Venues\n"
+            << "  0. Back\n";
+        printLine();
+        ch = safeIntInput("Choice: ", 0, 2);
+        switch (ch) {
+        case 1: addVenue(); break;
+        case 2: listVenues(); break;
+        }
+    } while (ch != 0);
+}
+
+void AcademicSystem::addVenue() {
+    if (venueCount >= MAX_VENUES) {
+        cout << "ERROR: Maximum venues reached (" << MAX_VENUES << ")!\n";
+        pauseScreen();
+        return;
+    }
+
+    printHeader("ADD NEW VENUE");
+
+    string rid;
+    int cap, hc;
+
+    while (true) {
+        cout << "Enter Room ID (e.g., A101, LAB1, 101): ";
+        cin >> rid;
+        rid = trim(rid);
+
+        if (rid.empty()) {
+            cout << "ERROR: Room ID cannot be empty!\n";
+            continue;
+        }
+
+        bool duplicate = false;
+        for (int i = 0; i < venueCount; i++) {
+            if (venues[i].getRoomID() == rid) {
+                duplicate = true;
+                break;
+            }
+        }
+        if (duplicate) {
+            cout << "ERROR: Room ID '" << rid << "' already exists!\n";
+            continue;
+        }
+
+        break;
+    }
+
+    cap = safeIntInput("Enter Capacity (1-1000): ", 1, 1000);
+
+    hc = safeIntInput("Has Computers? (1=Yes, 0=No): ", 0, 1);
+
+    venues[venueCount++] = Venue(rid, cap, hc == 1);
+
+    cout << "\n[SUCCESS] Venue added successfully!\n";
+    cout << "========================================\n";
+    cout << "Venue Details:\n";
+    cout << "  Room ID    : " << rid << "\n";
+    cout << "  Capacity   : " << cap << "\n";
+    cout << "  Computers  : " << (hc == 1 ? "Yes" : "No") << "\n";
+    cout << "========================================\n";
+
+    saveAll();
+    pauseScreen();
+}
+
+void AcademicSystem::listVenues() {
+    printHeader("ALL VENUES");
+    if (venueCount == 0) {
+        cout << "No venues found.\n";
+        pauseScreen();
+        return;
+    }
+    cout << left << setw(12) << "Room ID" << setw(12) << "Capacity" << "Computers\n";
+    printLine();
+    for (int i = 0; i < venueCount; i++) {
+        venues[i].display();
+    }
+    pauseScreen();
+}

@@ -1,4 +1,4 @@
-#include "Utils.h"
+#include "utils.h"
 #include <iostream>
 #include <cstdlib>
 #include <cctype>
@@ -6,11 +6,12 @@
 
 using namespace std;
 
+
 void clearScreen() {
 #ifdef _WIN32
-    system("cls"); //for windows
+    system("cls");
 #else
-    system("clear"); //for linux.mac
+    system("clear");
 #endif
 }
 
@@ -20,8 +21,10 @@ void pauseScreen() {
     cin.get();
 }
 
-void printLine(char c, int len) {  //presents char
-    for (int i = 0; i < len; i++) cout << c;
+void printLine(char c, int len) {
+    for (int i = 0; i < len; i++) {
+        cout << c;
+    }
     cout << endl;
 }
 
@@ -29,24 +32,51 @@ void printHeader(const string& title) {
     cout << endl;
     printLine('=');
     int spaces = (60 - (int)title.size()) / 2;
-    for (int i = 0; i < spaces; i++) cout << ' ';
+    for (int i = 0; i < spaces; i++) {
+        cout << ' ';
+    }
     cout << title << endl;
     printLine('=');
 }
 
-string trim(const string& s) { //string manipulation to avoid empty spaces
-    int start = 0, end = (int)s.size() - 1;
-    while (start <= end && (s[start] == ' ' || s[start] == '\t' || s[start] == '\r')) start++;
-    while (end >= start && (s[end] == ' ' || s[end] == '\t' || s[end] == '\r')) end--;
-    return (start <= end) ? s.substr(start, end - start + 1) : "";
+
+int showMenu(const string& title, const string options[], int count) {
+    printHeader(title);
+    for (int i = 0; i < count; i++) {
+        cout << "  " << (i + 1) << ". " << options[i] << "\n";
+    }
+    cout << "  0. Back\n";
+    printLine();
+    return safeIntInput("Choice: ", 0, count);
 }
+
+
+
+string trim(const string& s) {
+    int start = 0;
+    int end = (int)s.size() - 1;
+
+    while (start <= end && (s[start] == ' ' || s[start] == '\t' || s[start] == '\r')) {
+        start++;
+    }
+
+    while (end >= start && (s[end] == ' ' || s[end] == '\t' || s[end] == '\r')) {
+        end--;
+    }
+
+    if (start <= end) {
+        return s.substr(start, end - start + 1);
+    }
+    return "";
+}
+
 
 void clearInput() {
     cin.clear();
     cin.ignore(10000, '\n');
 }
 
-int safeIntInput(const string& prompt, int minVal, int maxVal) {  //validation
+int safeIntInput(const string& prompt, int minVal, int maxVal) {
     int value;
     while (true) {
         cout << prompt;
@@ -69,7 +99,7 @@ int safeIntInput(const string& prompt, int minVal, int maxVal) {  //validation
     }
 }
 
-double safeDoubleInput(const string& prompt, double minVal, double maxVal) {  // validation
+double safeDoubleInput(const string& prompt, double minVal, double maxVal) {
     double value;
     while (true) {
         cout << prompt;
@@ -86,93 +116,74 @@ double safeDoubleInput(const string& prompt, double minVal, double maxVal) {  //
             return value;
         }
         else {
-            cout << "ERROR: Invalid input!\n";
+            cout << "ERROR: Invalid input! Please enter a number.\n";
             clearInput();
         }
     }
 }
 
-bool isValidID(const string& id) { //validation
-    if (id.empty()) {
-        cout << "ERROR: ID cannot be empty!\n";
-        return false;
-    }
+
+bool isValidID(const string& id) {
+    if (id.empty()) return false;
+    if (id[0] == '-') return false;
     for (size_t i = 0; i < id.length(); i++) {
-        char c = id[i];
-        if (!isdigit(c) && c != '_' && c != '-') {
-            cout << "ERROR: ID can only contain NUMBERS, _, -\n";
-            return false;
-        }
+        if (!isdigit(id[i])) return false;
     }
     return true;
 }
 
-bool isValidName(const string& name) { //validation
-    if (name.empty()) {
-        cout << "ERROR: Name cannot be empty!\n";
-        return false;
-    }
+bool isValidName(const string& name) {
+    if (name.empty()) return false;
     for (size_t i = 0; i < name.length(); i++) {
         char c = name[i];
         if (!isalpha(c) && c != ' ' && c != '.' && c != '-' && c != '\'') {
-            cout << "ERROR: Name can only contain LETTERS, spaces, dots, hyphens\n";
             return false;
         }
     }
     return true;
 }
 
-bool isValidEmail(const string& email) { // email format
-    if (email.empty()) {
-        cout << "ERROR: Email cannot be empty!\n";
-        return false;
-    }
-    bool hasAt = false, hasDot = false;
+bool isValidEmail(const string& email) {
+    if (email.empty()) return false;
+
+    bool hasAt = false;
+    bool hasDot = false;
     int atPos = -1;
+
     for (size_t i = 0; i < email.length(); i++) {
         if (email[i] == '@') {
-            if (hasAt) {
-                cout << "ERROR: Multiple @ symbols\n";
-                return false;
-            }
+            if (hasAt) return false;
             hasAt = true;
             atPos = i;
         }
-        if (hasAt && email[i] == '.' && i > (size_t)atPos) hasDot = true;
+        if (hasAt && email[i] == '.' && i > (size_t)atPos) {
+            hasDot = true;
+        }
     }
-    if (!hasAt) {
-        cout << "ERROR: Email must contain @\n";
-        return false;
-    }
-    if (!hasDot) {
-        cout << "ERROR: Email must have domain extension\n";
-        return false;
-    }
-    if (atPos == 0 || atPos == (int)email.length() - 1) {
-        cout << "ERROR: @ cannot be first or last\n";
-        return false;
-    }
+
+    if (!hasAt) return false;
+    if (!hasDot) return false;
+    if (atPos == 0) return false;
+    if (atPos == (int)email.length() - 1) return false;
+
     return true;
 }
 
-bool isValidTimeSlot(const string& slot) {  // format = mon 04:00-12:00
+bool isValidTimeSlot(const string& slot) {
     if (slot.empty() || slot == "TBD") return true;
-    if (slot.length() < 10) {
-        cout << "ERROR: Invalid time slot format\n";
-        return false;
-    }
+    if (slot.length() < 10) return false;
     return true;
 }
 
-bool confirmAction(const string& message) {  // y /n 
-    cout << "\n" << message << "\nType 'yes' to confirm: ";
+bool confirmAction(const string& message) {
+    cout << "\n" << message << "\n";
+    cout << "Type 'yes' to confirm: ";
     string response;
     cin >> response;
     clearInput();
     return (response == "yes" || response == "YES");
 }
 
-//Grade convertors
 
 double percentToGPA(double pct) {
     if (pct >= 90) return 4.0;
@@ -200,5 +211,76 @@ string letterGrade(double pct) {
     return "F";
 }
 
-int safeInt(const string& s) { return atoi(s.c_str()); }
-double safeDouble(const string& s) { return atof(s.c_str()); }
+
+int safeInt(const string& s) {
+    return atoi(s.c_str());
+}
+
+double safeDouble(const string& s) {
+    return atof(s.c_str());
+}
+
+// ==================== HELPER INPUT FUNCTIONS ====================
+
+string getValidatedID(const string& prompt) {
+    string id;
+    while (true) {
+        cout << prompt;
+        cin >> id;
+        id = trim(id);
+
+        if (!isValidID(id)) {
+            cout << "ERROR: ID must contain ONLY numbers (0-9) and cannot be negative!\n";
+            continue;
+        }
+        break;
+    }
+    return id;
+}
+
+string getValidatedName(const string& prompt) {
+    string name;
+    cin.ignore();
+    while (true) {
+        cout << prompt;
+        getline(cin, name);
+        name = trim(name);
+
+        if (!isValidName(name)) {
+            cout << "ERROR: Name can only contain letters, spaces, dots, hyphens, and apostrophes!\n";
+            continue;
+        }
+        break;
+    }
+    return name;
+}
+
+string getValidatedEmail(const string& prompt) {
+    string email;
+    while (true) {
+        cout << prompt;
+        getline(cin, email);
+        email = trim(email);
+
+        if (!isValidEmail(email)) {
+            cout << "ERROR: Invalid email format! Must contain @ and domain extension (e.g., .com)\n";
+            continue;
+        }
+        break;
+    }
+    return email;
+}
+
+string getValidatedType(const string& prompt) {
+    string type;
+    while (true) {
+        cout << prompt;
+        cin >> type;
+        type = trim(type);
+
+        if (type == "Regular" || type == "Scholarship" || type == "Exchange") {
+            return type;
+        }
+        cout << "ERROR: Invalid type! Please enter Regular, Scholarship, or Exchange\n";
+    }
+} 

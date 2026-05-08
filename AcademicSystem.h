@@ -28,7 +28,6 @@ private:
     DatabaseManager db;
     Scheduler scheduler;
 
-    // Helper methods
     Student* findStudent(const std::string& id) const;
     Teacher* findTeacher(const std::string& id) const;
     Course* findCourse(const std::string& id) const;
@@ -43,7 +42,6 @@ public:
     ~AcademicSystem();
     void loadData();
 
-    // Student Management
     void menuStudents();
     void addStudent();
     void listStudents();
@@ -52,7 +50,6 @@ public:
     void deleteStudent();
     void viewTranscript();
 
-    // Teacher Management
     void menuTeachers();
     void addTeacher();
     void listTeachers();
@@ -60,41 +57,35 @@ public:
     void deleteTeacher();
     void viewTeacherFeedback();
 
-    // Course Management
     void menuCourses();
     void addCourse();
     void listCourses();
     void deleteCourse();
     void viewCourseEnrollments();
 
-    // Venue Management
     void menuVenues();
     void addVenue();
     void listVenues();
 
-    // Section Management
     void menuSections();
     void createSection();
     void listSections();
 
-    // Registration
     void menuRegistration();
     void registerStudent();
     void dropCourse();
 
-    // Grading
     void menuGrading();
     void enterMarks();
     void viewGrades();
 
-    // Feedback
     void menuFeedback();
     void giveFeedback();
 
-    // Other
     void runScheduler();
     void viewWeightages();
     void run();
+
 };
 
 #endif

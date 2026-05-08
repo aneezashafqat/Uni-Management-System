@@ -1,10 +1,10 @@
-#include "AcademicSystem.h"
-#include "Student.h"
-#include "Teacher.h"
-#include "Course.h"
-#include "Assessment.h"
-#include "Utils.h"
-#include "WeightageConfig.h"
+#include "AcademicSystem.h" //added
+#include "Student.h" //added
+#include "Teacher.h" //added
+#include "Course.h" //added
+#include "Assessment.h" //left
+#include "Utils.h" //added
+#include "WeightageConfig.h" //left
 #include <iostream>
 #include <iomanip>
 
@@ -358,3 +358,141 @@ void AcademicSystem::viewTeacherFeedback() {
     else t->showFeedbacks();
     pauseScreen();
 }
+
+void AcademicSystem::menuCourses() {
+    const string options[] = { "Add Course", "List All Courses", "Delete Course", "View Course Enrollments" };
+    int ch;
+    do {
+        ch = showMenu("COURSE MANAGEMENT", options, 4);
+        switch (ch) {
+        case 1: addCourse(); break;
+        case 2: listCourses(); break;
+        case 3: deleteCourse(); break;
+        case 4: viewCourseEnrollments(); break;
+        }
+    } while (ch != 0);
+}
+
+void AcademicSystem::addCourse() {
+    if (courseCount >= MAX_COURSES) {
+        cout << " Maximum courses reached!\n";
+        pauseScreen();
+        return;
+    }
+
+    printHeader("ADD NEW COURSE");
+
+    string id = getValidatedID("Enter Course ID: ");
+
+    if (idExistsCourse(id)) {
+        cout << " Course ID already exists!\n";
+        pauseScreen();
+        return;
+    }
+
+    cin.ignore();
+    string title;
+    while (true) {
+        cout << "Enter Course Title: ";
+        getline(cin, title);
+        title = trim(title);
+        if (!title.empty()) break;
+        cout << "Title cannot be empty!\n";
+    }
+
+    string tid;
+    while (true) {
+        cout << "Enter Teacher ID: ";
+        getline(cin, tid);
+        tid = trim(tid);
+        if (findTeacher(tid)) break;
+        cout << " Teacher not found!\n";
+    }
+
+    string type;
+    while (true) {
+        cout << "Enter Type (Core/Elective/Lab): ";
+        cin >> type;
+        type = trim(type);
+        if (type == "Core" || type == "Elective" || type == "Lab") break;
+        cout << " Invalid type!\n";
+    }
+
+    Course* c = NULL;
+    if (type == "Core") c = new CoreCourse(id, title, tid);
+    else if (type == "Elective") c = new ElectiveCourse(id, title, tid);
+    else c = new LabCourse(id, title, tid);
+
+    double ew = WeightageConfig::getExamW(type);
+    double aw = WeightageConfig::getAssignW(type);
+    double qw = WeightageConfig::getQuizW(type);
+
+    if (ew > 0) c->addAssessment(new Exam(id + "_EX", "Final Exam", ew));
+    if (aw > 0) c->addAssessment(new Assignment(id + "_AS", "Assignment", aw));
+    if (qw > 0) c->addAssessment(new Quiz(id + "_QZ", "Quiz", qw));
+
+    courses[courseCount++] = c;
+    findTeacher(tid)->addCourse(id);
+
+    cout << "\n Course added!\n";
+    saveAll();
+    pauseScreen();
+}
+
+void AcademicSystem::listCourses() {
+    printHeader("ALL COURSES");
+    if (courseCount == 0) { cout << "No courses found.\n"; pauseScreen(); return; }
+    cout << left << setw(10) << "ID" << setw(30) << "Title" << setw(12) << "Type"
+        << setw(12) << "Teacher" << "Students\n";
+    printLine();
+    for (int i = 0; i < courseCount; i++) courses[i]->display();
+    pauseScreen();
+}
+
+void AcademicSystem::deleteCourse() {
+    printHeader("DELETE COURSE");
+    string id; cout << "Enter Course ID: "; cin >> id;
+
+    int index = -1;
+    for (int i = 0; i < courseCount; i++) {
+        if (courses[i] && courses[i]->getCourseID() == id) { index = i; break; }
+    }
+
+    if (index == -1) { cout << "Course not found!\n"; pauseScreen(); return; }
+
+    Course* c = courses[index];
+    cout << "\nDelete " << c->getTitle() << "? (y/n): ";
+    char confirm; cin >> confirm;
+    if (tolower(confirm) != 'y') { cout << "Deletion cancelled.\n"; pauseScreen(); return; }
+
+    for (int i = 0; i < c->getEnrollmentCount(); i++) {
+        Student* s = c->getStudentAt(i);
+        if (s) s->unenrollCourse(c->getCourseID());
+    }
+
+    delete courses[index];
+    for (int j = index; j < courseCount - 1; j++) courses[j] = courses[j + 1];
+    courseCount--;
+
+    cout << "\n Course deleted!\n";
+    saveAll();
+    pauseScreen();
+}
+
+void AcademicSystem::viewCourseEnrollments() {
+    string id; cout << "Enter Course ID: "; cin >> id;
+    Course* c = findCourse(id);
+    if (!c) { cout << "Course not found.\n"; pauseScreen(); return; }
+
+    printHeader("ENROLLMENTS - " + c->getTitle());
+    cout << "Type: " << c->getType() << " | Teacher: " << c->getTeacherID()
+        << " | Enrolled: " << c->getEnrollmentCount() << "\n";
+    printLine();
+
+    for (int i = 0; i < c->getEnrollmentCount(); i++) {
+        Student* s = c->getStudentAt(i);
+        if (s) cout << "  " << s->getID() << "  " << s->getName() << "\n";
+    }
+    pauseScreen();
+}
+

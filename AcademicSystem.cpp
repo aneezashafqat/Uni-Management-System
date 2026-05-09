@@ -550,3 +550,192 @@ void AcademicSystem::listVenues() {
     for (int i = 0; i < venueCount; i++) venues[i].display();
     pauseScreen();
 } 
+
+void AcademicSystem::menuSections() {
+    const string options[] = { "Create Section", "List All Sections" };
+    int ch;
+    do {
+        ch = showMenu("SECTION MANAGEMENT", options, 2);
+        switch (ch) {
+        case 1: createSection(); break;
+        case 2: listSections(); break;
+        }
+    } while (ch != 0);
+}
+
+
+void AcademicSystem::createSection() {
+    if (sectionCount >= MAX_SECTIONS) {
+        cout << " Maximum sections reached!\n";
+        pauseScreen();
+        return;
+    }
+
+    printHeader("CREATE NEW SECTION");
+
+    string sid = getValidatedID("Enter Section ID: ");
+
+    for (int i = 0; i < sectionCount; i++) {
+        if (sections[i].getSectionID() == sid) {
+            cout << " Section ID already exists!\n";
+            pauseScreen();
+            return;
+        }
+    }
+
+    string cid;
+    while (true) {
+        cout << "Enter Course ID: ";
+        cin >> cid;
+        cid = trim(cid);
+        if (findCourse(cid)) break;
+        cout << " Course not found!\n";
+    }
+
+    string tid;
+    while (true) {
+        cout << "Enter Teacher ID: ";
+        cin >> tid;
+        tid = trim(tid);
+        if (findTeacher(tid)) break;
+        cout << " Teacher not found!\n";
+    }
+
+    if (venueCount == 0) {
+        cout << " No venues available. Please add a venue first.\n";
+        pauseScreen();
+        return;
+    }
+
+    cout << "\nAvailable Venues:\n";
+    cout << left << setw(12) << "Venue ID" << setw(12) << "Capacity" << "Computers\n";
+    printLine('-', 35);
+    for (int i = 0; i < venueCount; i++) venues[i].display();
+    printLine('-', 35);
+
+    string vid;
+    while (true) {
+        cout << "Enter Venue ID: ";
+        cin >> vid;
+        vid = trim(vid);
+
+        bool found = false;
+        for (int i = 0; i < venueCount; i++) {
+            if (venues[i].getRoomID() == vid) { found = true; break; }
+        }
+        if (found) break;
+        cout << " Venue not found!\n";
+    }
+
+    cin.ignore();
+    string ts;
+    cout << "Enter Time Slot (or press Enter for TBD): ";
+    getline(cin, ts);
+    ts = trim(ts);
+    if (ts.empty()) ts = "TBD";
+
+    sections[sectionCount++] = Section(sid, cid, tid, vid, ts);
+
+    cout << "\n Section created!\n";
+    saveAll();
+    pauseScreen();
+}
+
+void AcademicSystem::listSections() {
+    printHeader("ALL SECTIONS");
+    if (sectionCount == 0) { cout << "No sections found.\n"; pauseScreen(); return; }
+    cout << left << setw(12) << "Section ID" << setw(10) << "Course" << setw(12) << "Teacher"
+        << setw(12) << "Venue" << setw(18) << "Time Slot" << "Students\n";
+    printLine();
+    for (int i = 0; i < sectionCount; i++) sections[i].display();
+    pauseScreen();
+}
+
+
+void AcademicSystem::menuRegistration() {
+    const string options[] = { "Register Student for Course", "Drop Course" };
+    int ch;
+    do {
+        ch = showMenu("COURSE REGISTRATION", options, 2);
+        switch (ch) {
+        case 1: registerStudent(); break;
+        case 2: dropCourse(); break;
+        }
+    } while (ch != 0);
+}
+
+void AcademicSystem::registerStudent() {
+    printHeader("REGISTER STUDENT");
+
+    string sid, cid;
+
+    Student* s = NULL;
+    while (true) {
+        cout << "Enter Student ID: ";
+        cin >> sid;
+        sid = trim(sid);
+        s = findStudent(sid);
+        if (s) break;
+        cout << " Student not found!\n";
+    }
+
+    Course* c = NULL;
+    while (true) {
+        cout << "Enter Course ID: ";
+        cin >> cid;
+        cid = trim(cid);
+        c = findCourse(cid);
+        if (c) break;
+        cout << " Course not found!\n";
+    }
+
+    if (c->isStudentEnrolled(sid)) {
+        cout << " Student already enrolled!\n";
+        pauseScreen();
+        return;
+    }
+
+    if (c->getEnrollmentCount() >= MAX_COURSE_ENROLL) {
+        cout << " Course is full!\n";
+        pauseScreen();
+        return;
+    }
+
+    if (c->addStudent(s)) {
+        cout << "\n Student registered!\n";
+        saveAll();
+    }
+    else {
+        cout << " Registration failed!\n";
+    }
+    pauseScreen();
+}
+
+void AcademicSystem::dropCourse() {
+    printHeader("DROP COURSE");
+
+    string sid, cid;
+    cout << "Enter Student ID: "; cin >> sid;
+    cout << "Enter Course ID: "; cin >> cid;
+
+    Student* s = findStudent(sid);
+    Course* c = findCourse(cid);
+
+    if (!s || !c) {
+        cout << " Student or Course not found!\n";
+        pauseScreen();
+        return;
+    }
+
+    if (!c->isStudentEnrolled(sid)) {
+        cout << " Student not enrolled!\n";
+        pauseScreen();
+        return;
+    }
+
+    if (c->removeStudent(sid)) {
+        cout << "\n Course dropped!\n";
+        saveAll();
+    }
+    pauseScreen();
+}

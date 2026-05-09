@@ -2,7 +2,7 @@
 #include "Student.h" //added
 #include "Teacher.h" //added
 #include "Course.h" //added
-#include "Assessment.h" //left
+#include "Assessment.h" //added
 #include "Utils.h" //added
 #include "WeightageConfig.h" //left
 #include <iostream>
@@ -736,6 +736,109 @@ void AcademicSystem::dropCourse() {
     if (c->removeStudent(sid)) {
         cout << "\n Course dropped!\n";
         saveAll();
+    }
+    pauseScreen();
+}
+
+void AcademicSystem::menuGrading() {
+    const string options[] = { "Enter Marks for Student", "View Course Grades" };
+    int ch;
+    do {
+        ch = showMenu("GRADING SYSTEM", options, 2);
+        switch (ch) {
+        case 1: enterMarks(); break;
+        case 2: viewGrades(); break;
+        }
+    } while (ch != 0);
+}
+
+
+void AcademicSystem::enterMarks() {
+    printHeader("ENTER MARKS");
+
+    string cid, sid;
+
+    Course* c = NULL;
+    while (true) {
+        cout << "Enter Course ID: ";
+        cin >> cid;
+        cid = trim(cid);
+        c = findCourse(cid);
+        if (c) break;
+        cout << " Course not found!\n";
+    }
+
+    Student* s = NULL;
+    while (true) {
+        cout << "Enter Student ID: ";
+        cin >> sid;
+        sid = trim(sid);
+        s = findStudent(sid);
+        if (s) break;
+        cout << " Student not found!\n";
+    }
+
+    if (!c->isStudentEnrolled(sid)) {
+        cout << " Student not enrolled!\n";
+        pauseScreen();
+        return;
+    }
+
+    c->showAssessments();
+
+    for (int i = 0; i < c->getAssessmentCount(); i++) {
+        Assessment* a = c->getAssessmentAt(i);
+        if (!a) continue;
+
+        double raw, max;
+        cout << "\n  " << a->getType() << " - " << a->getName()
+            << " (Weight: " << a->getWeightage() << "%)\n";
+
+        max = safeDoubleInput("    Max Score: ", 1, 1000);
+        raw = safeDoubleInput("    Raw Score: ", 0, max);
+
+        a->setScore(sid, raw, max);
+    }
+
+    double fg = c->calculateFinalGrade(sid);
+    if (fg >= 0) {
+        s->setFinalGrade(cid, fg);
+        updateStudentGPA(s);
+        cout << "\n========================================\n";
+        cout << "Final Grade: " << fixed << setprecision(2) << fg << "%";
+        cout << " (" << letterGrade(fg) << ")\n";
+        if (s->getType() == "Exchange") {
+            cout << "Exchange Student: " << (fg >= 50 ? "PASS" : "FAIL") << "\n";
+        }
+        cout << "========================================\n";
+    }
+    else {
+        cout << "No scores entered.\n";
+    }
+
+    saveAll();
+    pauseScreen();
+}
+
+void AcademicSystem::viewGrades() {
+    string cid; cout << "Enter Course ID: "; cin >> cid;
+    Course* c = findCourse(cid);
+    if (!c) { cout << "Course not found.\n"; pauseScreen(); return; }
+
+    printHeader("GRADES - " + c->getTitle());
+    cout << left << setw(12) << "Student ID" << setw(25) << "Name"
+        << setw(10) << "Grade%" << setw(8) << "Letter\n";
+    printLine();
+
+    for (int i = 0; i < c->getEnrollmentCount(); i++) {
+        Student* s = c->getStudentAt(i);
+        if (!s) continue;
+
+        double g = s->getFinalGrade(cid);
+        cout << left << setw(12) << s->getID() << setw(25) << s->getName();
+
+        if (g < 0) cout << setw(10) << "N/A" << setw(8) << "N/A\n";
+        else cout << setw(10) << fixed << setprecision(1) << g << setw(8) << letterGrade(g) << "\n";
     }
     pauseScreen();
 }

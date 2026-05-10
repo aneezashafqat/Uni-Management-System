@@ -842,3 +842,67 @@ void AcademicSystem::viewGrades() {
     }
     pauseScreen();
 }
+void AcademicSystem::menuFeedback() {
+    const string options[] = { "Give Feedback to Teacher", "View Teacher Feedback" };
+    int ch;
+    do {
+        ch = showMenu("TEACHER FEEDBACK", options, 2);
+        switch (ch) {
+        case 1: giveFeedback(); break;
+        case 2: viewTeacherFeedback(); break;
+        }
+    } while (ch != 0);
+}
+
+void AcademicSystem::giveFeedback() {
+    printHeader("GIVE FEEDBACK");
+
+    string tid;
+    Teacher* t = NULL;
+    while (true) {
+        cout << "Enter Teacher ID: ";
+        cin >> tid;
+        tid = trim(tid);
+        t = findTeacher(tid);
+        if (t) break;
+        cout << " Teacher not found!\n";
+    }
+
+    int rating = safeIntInput("Enter Rating (1-5): ", 1, 5);
+    cin.ignore();
+    string comment;
+    cout << "Enter Comment: ";
+    getline(cin, comment);
+    if (comment.empty()) comment = "No comment.";
+
+    t->addFeedback(rating, comment);
+
+    cout << "\n Feedback submitted!\n";
+    cout << "New average rating: " << fixed << setprecision(2) << t->getAvgFeedback() << "/5\n";
+
+    saveAll();
+    pauseScreen();
+}
+void AcademicSystem::runScheduler() {
+    printHeader("RUN EXAM SCHEDULER");
+
+    if (sectionCount == 0) { cout << " No sections to schedule.\n"; pauseScreen(); return; }
+    if (venueCount == 0) { cout << " No venues available.\n"; pauseScreen(); return; }
+
+    for (int i = 0; i < sectionCount; i++) {
+        Course* c = findCourse(sections[i].getCourseID());
+        if (c) sections[i].setStudentCount(c->getEnrollmentCount());
+    }
+
+    string report = scheduler.assign(sections, sectionCount, venues, venueCount, courses, courseCount);
+    db.saveSchedule(report);
+
+    cout << "\n Schedule saved to data/exam_schedule.txt\n";
+    saveAll();
+    pauseScreen();
+}
+
+void AcademicSystem::viewWeightages() {
+    WeightageConfig::display();
+    pauseScreen();
+}
